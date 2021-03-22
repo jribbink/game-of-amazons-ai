@@ -1,6 +1,6 @@
 package ubc.cosc322.search;
 import java.util.*; 
-import ubc.cosc322.board.GameBoard;
+import ubc.cosc322.board.GameState;
 import ubc.cosc322.board.tiles.Arrow;
 import ubc.cosc322.board.tiles.Queen;
 
@@ -11,10 +11,10 @@ public class SearchNode {
     private ChildGenerator childGen = new ChildGenerator();
     private ArrayList<SearchNode> children = new ArrayList<SearchNode>();
    
-    // public GameBoard gameBoard;
+    // public GameState GameState;
 
-    GameBoard board;
-    public SearchNode(GameBoard board, Queen queen, Arrow arrow, int heuristic) {
+    GameState board;
+    public SearchNode(GameState board, Queen queen, Arrow arrow, int heuristic) {
         this.board = board;
         this.queen = queen;
         this.arrow = arrow;
@@ -22,7 +22,7 @@ public class SearchNode {
     }
 
 
-    public SearchNode(GameBoard board) {
+    public SearchNode(GameState board) {
         this.board = board;
     }
 

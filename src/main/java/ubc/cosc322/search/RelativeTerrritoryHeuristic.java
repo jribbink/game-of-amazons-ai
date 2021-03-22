@@ -4,7 +4,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 import ubc.cosc322.board.tiles.BoardTile;
-import ubc.cosc322.board.GameBoard;
+import ubc.cosc322.board.GameState;
 import ubc.cosc322.board.tiles.Queen;
 
 public class RelativeTerrritoryHeuristic {
@@ -13,7 +13,7 @@ public class RelativeTerrritoryHeuristic {
 
     BoardTile[][] board;
 
-    public int calc(GameBoard board) {
+    public int calc(GameState board) {
         this.board = board.board;
 
         friendlyTiles = 0;
@@ -79,7 +79,7 @@ public class RelativeTerrritoryHeuristic {
         for(int i = 1; col + i <= 9; i++)
         {
             if(checked[row][col + i] == false)
-                moves.add(new Queen(row, col - i));
+                moves.add(new Queen(row, col + i));
             if(board[row][col + i] != null)
                 break;
         }
@@ -132,9 +132,9 @@ public class RelativeTerrritoryHeuristic {
         // Get all moves diag right/up
         for(int i = 1; col + i <= 9 && row - i >= 0; i++)
         {
-            if(checked[row + i][col + i] == false)
+            if(checked[row - i][col + i] == false)
                 moves.add(new Queen(row - i, col + i));
-            if(board[row + i][col + i] == null)
+            if(board[row - i][col + i] == null)
                 break;
         }
 

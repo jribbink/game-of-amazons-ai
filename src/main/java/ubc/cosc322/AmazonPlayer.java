@@ -7,13 +7,18 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import sfs2x.client.entities.Room;
-import ubc.cosc322.board.GameBoard;
+import ubc.cosc322.board.GameState;
+import ubc.cosc322.board.tiles.Arrow;
+import ubc.cosc322.board.tiles.Queen;
 import ubc.cosc322.search.SearchNode;
 import ubc.cosc322.search.SearchTree;
 import ygraph.ai.smartfox.games.BaseGameGUI;
 import ygraph.ai.smartfox.games.GameClient;
 import ygraph.ai.smartfox.games.GameMessage;
 import ygraph.ai.smartfox.games.GamePlayer;
+import ygraph.ai.smartfox.games.Amazon.GameBoard;
+import ygraph.ai.smartfox.games.amazons.AmazonsBoard;
+import ygraph.ai.smartfox.games.amazons.AmazonsGameMessage;
 
 /**
  * For testing and demo purposes only. An GUI Amazon client for human players 
@@ -31,45 +36,49 @@ public class AmazonPlayer extends GamePlayer {
     private boolean isWhite = true;
     private int turn = 0;
 
-    private GameBoard board;
+    private GameState board;
     private SearchTree search;
+
+    AmazonsBoard gBoard;
 
     public AmazonPlayer(String username, String password)
     {    	   
-      this.userName = username;
+        this.userName = username;
     	this.password = password;
 
-      //Init GUI
+        //Init GUI
     	this.gamegui = new BaseGameGUI(this);
     }
 
-    public static void main(String[] args) {				 
-    	AmazonPlayer player = new AmazonPlayer("Jordan", "cosc322");
-    	
-    	if(player.getGameGUI() == null) {
-    		player.Go();
-    	}
-    	else {
-    		BaseGameGUI.sys_setup();
-            java.awt.EventQueue.invokeLater(new Runnable() {
-                public void run() {
-                	player.Go();
-                }
-            });
-    	}
-    }
-
     private void handleLocalMove() {
+        turn++;
         SearchNode bestMove = search.performMove();
         board.updateMoves();
 
-
         gameClient.sendMoveMessage(bestMove.getQueen().oldPosition(), bestMove.getQueen().currentPos(), bestMove.getArrow().currentPos());
+        this.gamegui.updateGameState(bestMove.getQueen().oldPosition(), bestMove.getQueen().currentPos(), bestMove.getArrow().currentPos());
 
+
+        LOGGER.log(Level.INFO, "[" + bestMove.getQueen().prev_row + ", " + bestMove.getQueen().prev_col + "] -> [" + bestMove.getQueen().row + ", " + bestMove.getQueen().col + "] | [" + bestMove.getArrow().row + ", " + bestMove.getArrow().col + "]");
         //Check if game is over
     }
 
     private void handleOpponentMove(Map<String, Object> msgDetails) {
+        turn++;
+
+		ArrayList<Integer> queenCurrent = (ArrayList<Integer>) msgDetails.get(AmazonsGameMessage.QUEEN_POS_CURR);
+		ArrayList<Integer> queenNext = (ArrayList<Integer>) msgDetails.get(AmazonsGameMessage.Queen_POS_NEXT);
+		ArrayList<Integer> arrowPos = (ArrayList<Integer>) msgDetails.get(AmazonsGameMessage.ARROW_POS);
+
+        Queen enemy = new Queen(queenNext.get(0), queenNext.get(1), false);
+        enemy.prev_row = queenCurrent.get(0);
+        enemy.prev_col = queenCurrent.get(1);
+
+        Arrow arrow = new Arrow(arrowPos.get(0), arrowPos.get(1));
+        search.moveQueen(enemy, arrow);
+
+        this.gamegui.updateGameState(queenCurrent, queenNext, arrowPos);
+
         handleLocalMove();
     }
 
@@ -90,23 +99,25 @@ public class AmazonPlayer extends GamePlayer {
         {
             case GameMessage.GAME_ACTION_START:
                 LOGGER.log(Level.INFO, "Game Started");
-
+                
                 // Set our colour
                 isWhite = msgDetails.get("player-white").equals(this.userName);
 
+                
+
                 // Initialize game state
-                board = new GameBoard(isWhite);
+                board = new GameState(isWhite);
                 search = new SearchTree(new SearchNode(board));
 
                 // Make first move if black
                 if(!isWhite)
                     handleLocalMove();
+                 
                 
                 break;
             case GameMessage.GAME_ACTION_MOVE:
                 LOGGER.log(Level.INFO, "Opponent Move");
                 handleOpponentMove(msgDetails);
-                this.gamegui.updateGameState(msgDetails);
                 break;
 
             case GameMessage.GAME_STATE_BOARD:

@@ -2,7 +2,7 @@ package ubc.cosc322.search;
 
 import java.util.ArrayList;
 
-import ubc.cosc322.board.GameBoard;
+import ubc.cosc322.board.GameState;
 import ubc.cosc322.board.tiles.Arrow;
 import ubc.cosc322.board.tiles.Queen;
 
@@ -11,7 +11,7 @@ public class ChildGenerator {
         //empty constructor
     }
 
-    public ArrayList<SearchNode> getChildren(GameBoard state, boolean ourMove) {
+    public ArrayList<SearchNode> getChildren(GameState state, boolean ourMove) {
         Queen[] queens;
         ArrayList<SearchNode> successors = new ArrayList<SearchNode>();
 
@@ -24,7 +24,7 @@ public class ChildGenerator {
 
         for (int i = 0; i < queens.length; i++) {
             for(Queen move: state.getMoves(queens[i])) {
-                GameBoard tempState = cloneState(state);
+                GameState tempState = cloneState(state);
 
                 if(ourMove)
                     tempState.friendlies[i] = move;
@@ -36,7 +36,7 @@ public class ChildGenerator {
                 ArrayList<Arrow> arrowMoves = tempState.getArrowMoves(move.col, move.row);
                 for(Arrow arrow: arrowMoves)
                 {
-                    GameBoard newState = cloneState(tempState);
+                    GameState newState = cloneState(tempState);
                     newState.addArrow(arrow);
 
                     SearchNode node = new SearchNode(newState, move, arrow, 0);
@@ -48,7 +48,7 @@ public class ChildGenerator {
         return successors;
     }
 
-    private GameBoard cloneState(GameBoard state) {
+    private GameState cloneState(GameState state) {
         Queen[] newFriendlies = new Queen[4];
         for(int i = 0; i < 4; i++)
         {
@@ -70,6 +70,6 @@ public class ChildGenerator {
             arrowCopy.add(arrow);
         }
 
-        return new GameBoard(newFriendlies, newEnemies, arrowCopy);
+        return new GameState(newFriendlies, newEnemies, arrowCopy);
     }
 }
