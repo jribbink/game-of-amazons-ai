@@ -58,7 +58,7 @@ public class MonteCarloTreeSearch {
     public int playouts = 0;
     
     //CONFIG
-    final double MAX_TIME = 15;
+    final double MAX_TIME = 28;
 
     public MonteCarloTreeSearch(SearchNode root) {
         this.root = root;
