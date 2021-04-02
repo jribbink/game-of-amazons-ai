@@ -9,11 +9,14 @@ public class SearchNode {
     private Arrow arrow;
     private int heuristic;
     private ChildGenerator childGen = new ChildGenerator();
-    private ArrayList<SearchNode> children = new ArrayList<SearchNode>();
+    public ArrayList<SearchNode> children = new ArrayList<SearchNode>();
+
+    public SearchNode parent;
    
     // public GameState GameState;
 
-    GameState board;
+    public GameState board;
+    
     public SearchNode(GameState board, Queen queen, Arrow arrow, int heuristic) {
         this.board = board;
         this.queen = queen;
@@ -42,11 +45,33 @@ public class SearchNode {
         this.heuristic = heuristic;
     }
 
-    public void setChildren(boolean ourTurn) {
-        children = childGen.getChildren(board, ourTurn);
+    public void setChildren() {
+        children = childGen.getChildren(board, this);
     }
 
     public ArrayList<SearchNode> getChildren() {
         return children;
+    }
+
+    public void setParent(SearchNode parent) {
+        this.parent = parent;
+    }
+
+    public SearchNode getParent() {
+        return parent;
+    }
+
+    public static SearchNode max(SearchNode n1, SearchNode n2) {
+        if(n2 == null || (n1 != null && n1.getHeuristic() > n2.getHeuristic())) return n1;
+        else return n2;
+    }
+
+    public static SearchNode min(SearchNode n1, SearchNode n2) {
+        if(n2 == null || (n1 != null && n1.getHeuristic() > n2.getHeuristic())) return n1;
+        else return n2;
+    }
+
+    public SearchNode getRandomChild() {
+        return children.get((int)(Math.random() * children.size()));
     }
 }

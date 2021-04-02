@@ -9,8 +9,8 @@ public class Arrow extends BoardTile {
 
     public ArrayList<Integer> currentPos() {
         ArrayList<Integer> pos = new ArrayList<>();
-        pos.add(this.row);
-        pos.add(this.col);
+        pos.add(this.row + 1);
+        pos.add(this.col + 1);
         return pos;
     }
     

@@ -30,15 +30,15 @@ public class Queen extends BoardTile {
 
     public ArrayList<Integer> oldPosition() {
         ArrayList<Integer> pos = new ArrayList<>();
-        pos.add(this.prev_row);
-        pos.add(this.prev_col);
+        pos.add(this.prev_row + 1);
+        pos.add(this.prev_col + 1);
         return pos;
     }
 
     public ArrayList<Integer> currentPos() {
         ArrayList<Integer> pos = new ArrayList<>();
-        pos.add(this.row);
-        pos.add(this.col);
+        pos.add(this.row + 1);
+        pos.add(this.col + 1);
         return pos;
     }
 }

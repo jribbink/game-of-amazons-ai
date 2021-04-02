@@ -11,9 +11,11 @@ public class ChildGenerator {
         //empty constructor
     }
 
-    public ArrayList<SearchNode> getChildren(GameState state, boolean ourMove) {
+    public ArrayList<SearchNode> getChildren(GameState state, SearchNode parent) {
         Queen[] queens;
         ArrayList<SearchNode> successors = new ArrayList<SearchNode>();
+
+        boolean ourMove = state.ourTurn;
 
         if (!ourMove) {
             queens = state.enemies;
@@ -25,6 +27,7 @@ public class ChildGenerator {
         for (int i = 0; i < queens.length; i++) {
             for(Queen move: state.getMoves(queens[i])) {
                 GameState tempState = cloneState(state);
+                tempState.ourTurn = !ourMove;
 
                 if(ourMove)
                     tempState.friendlies[i] = move;
@@ -33,13 +36,19 @@ public class ChildGenerator {
 
                 tempState.rebaseBoard();
 
-                ArrayList<Arrow> arrowMoves = tempState.getArrowMoves(move.col, move.row);
+                ArrayList<Arrow> arrowMoves = tempState.getArrowMoves(move.row, move.col, move.prev_row, move.prev_col);
                 for(Arrow arrow: arrowMoves)
                 {
                     GameState newState = cloneState(tempState);
                     newState.addArrow(arrow);
 
                     SearchNode node = new SearchNode(newState, move, arrow, 0);
+                    node.parent = parent;
+
+                    /*VisitMoveTuple data = ReinforcementLearning.getInstance().getData(node.board.board);
+                    node.board.numWins = data.numWins;
+                    node.board.numVisit = data.numVisit;*/
+
                     successors.add(node);
                 }
             }
@@ -48,7 +57,7 @@ public class ChildGenerator {
         return successors;
     }
 
-    private GameState cloneState(GameState state) {
+    public static GameState cloneState(GameState state) {
         Queen[] newFriendlies = new Queen[4];
         for(int i = 0; i < 4; i++)
         {
@@ -70,6 +79,6 @@ public class ChildGenerator {
             arrowCopy.add(arrow);
         }
 
-        return new GameState(newFriendlies, newEnemies, arrowCopy);
+        return new GameState(newFriendlies, newEnemies, arrowCopy, state.ourTurn);
     }
 }
