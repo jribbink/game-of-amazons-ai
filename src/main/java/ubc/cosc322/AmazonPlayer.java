@@ -17,7 +17,6 @@ import ubc.cosc322.board.tiles.Queen;
 import ubc.cosc322.search.MonteCarloTreeSearch;
 import ubc.cosc322.search.ReinforcementLearning;
 import ubc.cosc322.search.SearchNode;
-import ubc.cosc322.search.SearchTree;
 import ygraph.ai.smartfox.games.BaseGameGUI;
 import ygraph.ai.smartfox.games.GameClient;
 import ygraph.ai.smartfox.games.GameMessage;
@@ -43,7 +42,6 @@ public class AmazonPlayer extends GamePlayer {
     private int turn = 0;
 
     private GameState board;
-    private SearchTree search;
     private MonteCarloTreeSearch mcts;
 
     AmazonsBoard gBoard;

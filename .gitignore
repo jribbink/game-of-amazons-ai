@@ -73,3 +73,7 @@ local.properties
 
 ## MAVEN ##
 target/
+
+## VSCODE ##
+.vscode/
+.vs/
