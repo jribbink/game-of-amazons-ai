@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import ubc.cosc322.WebsocketClient;
 import ubc.cosc322.board.GameState;
 import ubc.cosc322.board.tiles.Arrow;
 import ubc.cosc322.board.tiles.Queen;
@@ -53,30 +54,23 @@ class SimulationWorker extends Thread {
   }
 
 public class MonteCarloTreeSearch {
-    SearchNode root;
+    public SearchNode root;
     public boolean isWhite;
     public int playouts = 0;
     
     //CONFIG
-    final double MAX_TIME = 28;
+    final double MAX_TIME = 2;
+
+    public WebsocketClient ws = null;
 
     public MonteCarloTreeSearch(SearchNode root) {
         this.root = root;
     }
 
-    public SearchNode findNextMove() {
+    public void performSearch() {
         long start = System.nanoTime();
-        long end = start + ((long)MAX_TIME * TimeUnit.SECONDS.toNanos(1));
+        long end = start + ((long)(MAX_TIME * TimeUnit.SECONDS.toNanos(1)));
         playouts = 0;
-
-        if (root.board.checkStatus() == 0)
-        {
-            root.setChildren();
-        }
-        else
-        {
-            return root;
-        }
 
         ArrayList<SimulationWorker> workers = new ArrayList<>();
 
@@ -95,6 +89,19 @@ public class MonteCarloTreeSearch {
                 if(t.isAlive()) alive = true;
             }
         }
+    }
+
+    public SearchNode findNextMove() {
+        if (root.board.checkStatus() == 0)
+        {
+            root.setChildren();
+        }
+        else
+        {
+            return root;
+        }
+
+        performSearch();
 
         SearchNode winnerNode = null;
         for(SearchNode child: root.children)
@@ -105,7 +112,7 @@ public class MonteCarloTreeSearch {
             //addLearningData(child);
         }
         //addLearningData(root);
-
+        
         printStatus(winnerNode);
         return winnerNode;
     }
@@ -117,9 +124,15 @@ public class MonteCarloTreeSearch {
         int left_bars = (int)Math.round(pct * 10);
         String innerStr = "#".repeat(left_bars) + " ".repeat(10 - left_bars);
         
+        String statusString = (isWhite?"WHITE\t":"BLACK\t") + Math.round(pct * 1000) / 10. + "%\t[" + innerStr + "]";
+
         System.out.println();
-        System.out.println((isWhite?"WHITE\t":"BLACK\t") + Math.round(pct * 1000) / 10. + "%\t[" + innerStr + "]");
+        System.out.println(statusString);
         System.out.println();
+
+        if(this.ws != null) {
+            ws.log("\n" + statusString + "\n" + playouts + " playouts\n");
+        }
     }
 
     private void addLearningData(SearchNode node) {
@@ -127,8 +140,7 @@ public class MonteCarloTreeSearch {
     }
     
     public void moveQueen(Queen qpos, Arrow apos) {
-        root.board.moveQueen(qpos, apos);
-        root.children.clear();
+        root.moveQueen(qpos, apos);
     }
 
     public SearchNode selectPromisingNode(SearchNode parent) {

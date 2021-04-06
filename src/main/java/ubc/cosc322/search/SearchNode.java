@@ -61,6 +61,11 @@ public class SearchNode {
         return parent;
     }
 
+    public void moveQueen(Queen qpos, Arrow apos) {
+        board.moveQueen(qpos, apos);
+        children.clear();
+    }
+
     public static SearchNode max(SearchNode n1, SearchNode n2) {
         if(n2 == null || (n1 != null && n1.getHeuristic() > n2.getHeuristic())) return n1;
         else return n2;

@@ -1,0 +1,117 @@
+<html>
+  <head>
+    <title>Game of Amazons</title>
+    
+    <style>
+      body {
+         font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif; 
+         font-weight: 300;
+		 margin: 0;
+      }
+      
+      #content {
+      	width: 100%;
+      	height: 100vh;
+      	display: flex;
+      	justify-content: center;
+      	align-items: center;
+      }
+      
+      #inner-content {
+      	display: flex;
+      	flex-direction: column;
+      }
+      
+      #board {
+      	background-color: #769656;
+      	width: 400px;
+      	height: 400px;
+      }
+      
+      .player-display {
+      	display: flex;
+      	padding: 0.5em;
+      }
+
+      .player-box {
+      	padding: 0.5em;
+      	border: 2px solid black;
+      	background-color: darkgrey;
+      	color: white;
+      	font-weight: bold;
+      	font-size: 1.25em;
+      	border-radius: 20px;
+      }
+      
+      .timer {
+      	align-self: center;
+    	margin-left: auto;
+      	font-size: 2em;
+      }
+      
+      .sidebar {
+      	border: 1px solid black;
+      	margin-right: auto;
+      	margin-left: auto;
+      }
+	  
+	  .sidebar-header {
+		padding: 0.4em;
+		margin: 0;
+	  }
+	  
+	  #log-textarea {
+		width: 350px;
+		height: 600px;
+	  }
+	  
+	  #analysis {
+		width: 350px;
+		height: 600px;
+	  }
+    </style>
+  </head>
+  <body>
+    <div id="content">
+      <div id=logs class="sidebar">
+        <h1 class="sidebar-header">Logs</h1>
+		<textarea id=log-textarea>
+		
+		</textarea>
+      </div>
+      
+      <div id=inner-content>
+        <div class="player-display" id=top-player>
+          <div class=player-box>
+            Opponent
+          </div>
+          <div class="timer">
+            0:00
+          </div>
+        </div>
+        <div id=board>
+
+        </div>
+        <div class="player-display" id=bottom-player>
+          <div class=player-box>
+            Okgn Tech
+          </div>
+          <div class="timer">
+            0:00
+          </div>
+        </div>
+      </div>
+      
+	  <div id=analysis class="sidebar">
+        <h1 class="sidebar-header">Analysis</h1>
+      </div>
+    </div>
+	
+	<script>
+		var ws = new WebSocket("ws://localhost:3223");
+		ws.onopen = function (evt) {
+			ws.send("OI!");
+		};
+	</script>
+  </body>
+</html>

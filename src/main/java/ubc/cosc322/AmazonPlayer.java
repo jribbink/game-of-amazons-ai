@@ -1,19 +1,30 @@
 package ubc.cosc322;
 
 import java.awt.Color;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+import java.util.Timer;
 import sfs2x.client.entities.Room;
 import ubc.cosc322.board.GameState;
 import ubc.cosc322.board.tiles.Arrow;
 import ubc.cosc322.board.tiles.Queen;
+import ubc.cosc322.messages.RoomModel;
+import ubc.cosc322.messages.StateUpdate;
 import ubc.cosc322.search.MonteCarloTreeSearch;
 import ubc.cosc322.search.ReinforcementLearning;
 import ubc.cosc322.search.SearchNode;
@@ -25,15 +36,18 @@ import ygraph.ai.smartfox.games.Amazon.GameBoard;
 import ygraph.ai.smartfox.games.amazons.AmazonsBoard;
 import ygraph.ai.smartfox.games.amazons.AmazonsGameMessage;
 
+import com.fasterxml.jackson.databind.ObjectMapper; 
+import com.fasterxml.jackson.databind.ObjectWriter; 
+
 /**
  * For testing and demo purposes only. An GUI Amazon client for human players 
  * @author yong.gao@ubc.ca
  */
 public class AmazonPlayer extends GamePlayer {
-  private static final Logger LOGGER = Logger.getLogger( AmazonPlayer.class.getName() );
+    private static final Logger LOGGER = Logger.getLogger( AmazonPlayer.class.getName() );
 
     private GameClient gameClient = null; 
-    private BaseGameGUI gamegui = null;
+    //private BaseGameGUI gamegui = null;
 
     private String userName = null;
     private String password = null;
@@ -41,10 +55,13 @@ public class AmazonPlayer extends GamePlayer {
     private boolean isWhite = true;
     private int turn = 0;
 
-    private GameState board;
     private MonteCarloTreeSearch mcts;
 
     AmazonsBoard gBoard;
+    WebsocketClient client = new WebsocketClient(this);
+    Gson gson = new Gson();
+
+    private Room[] lastRooms = null;
 
     public AmazonPlayer(String username, String password)
     {
@@ -52,11 +69,9 @@ public class AmazonPlayer extends GamePlayer {
     	this.password = password;
 
         //Init GUI
-    	this.gamegui = new BaseGameGUI(this);
-        this.gamegui.add(new JLabel(new ImageIcon("C:/Users/Jordan/Downloads/gao.png")));
-        this.gamegui.setBackground(Color.cyan);
-        this.gamegui.revalidate();
-        this.gamegui.repaint();
+    	//this.gamegui = new BaseGameGUI(this);
+        client.connect("ws://localhost:3222");
+        reset();
     }
 
     private void handleLocalMove() {
@@ -72,12 +87,16 @@ public class AmazonPlayer extends GamePlayer {
         mcts.moveQueen(bestMove.getQueen(), bestMove.getArrow());
 
         gameClient.sendMoveMessage(bestMove.getQueen().oldPosition(), bestMove.getQueen().currentPos(), bestMove.getArrow().currentPos());
-        this.gamegui.updateGameState(bestMove.getQueen().oldPosition(), bestMove.getQueen().currentPos(), bestMove.getArrow().currentPos());
+        //this.gamegui.updateGameState(bestMove.getQueen().oldPosition(), bestMove.getQueen().currentPos(), bestMove.getArrow().currentPos());
 
-
-        LOGGER.log(Level.INFO, "[" + bestMove.getQueen().prev_row + ", " + bestMove.getQueen().prev_col + "] -> [" + bestMove.getQueen().row + ", " + bestMove.getQueen().col + "] | [" + bestMove.getArrow().row + ", " + bestMove.getArrow().col + "]" + " Heuristic: " + bestMove.getHeuristic());
+        String logMsg = "[" + bestMove.getQueen().prev_row + ", " + bestMove.getQueen().prev_col + "] -> [" + bestMove.getQueen().row + ", " + bestMove.getQueen().col + "] | [" + bestMove.getArrow().row + ", " + bestMove.getArrow().col + "]" + " Heuristic: " + bestMove.getHeuristic();
+        LOGGER.log(Level.INFO, logMsg);
+        this.client.log(logMsg);
         
         //ReinforcementLearning.getInstance().serialize();
+
+        //update game state
+        client.updateState(mcts.root.board, isWhite);
     }
 
     private void handleOpponentMove(Map<String, Object> msgDetails) {
@@ -87,7 +106,9 @@ public class AmazonPlayer extends GamePlayer {
 		ArrayList<Integer> queenNext = (ArrayList<Integer>) msgDetails.get(AmazonsGameMessage.Queen_POS_NEXT);
 		ArrayList<Integer> arrowPos = (ArrayList<Integer>) msgDetails.get(AmazonsGameMessage.ARROW_POS);
 
-        LOGGER.log(Level.INFO, "[" + queenCurrent.get(0) + ", " + queenCurrent.get(1) + "] -> [" + queenNext.get(0) + ", " + queenNext.get(1) + "] | [" + arrowPos.get(0) + ", " + arrowPos.get(1) + "]");
+        String logMsg = "[" + queenCurrent.get(0) + ", " + queenCurrent.get(1) + "] -> [" + queenNext.get(0) + ", " + queenNext.get(1) + "] | [" + arrowPos.get(0) + ", " + arrowPos.get(1) + "]";
+        LOGGER.log(Level.INFO, logMsg);
+        client.log(logMsg);
 
         Queen enemy = new Queen(queenNext.get(0) - 1, queenNext.get(1) - 1, false);
         enemy.prev_row = queenCurrent.get(0) - 1;
@@ -95,12 +116,21 @@ public class AmazonPlayer extends GamePlayer {
 
         Arrow arrow = new Arrow(arrowPos.get(0) - 1, arrowPos.get(1) - 1);
 
-        this.gamegui.updateGameState(queenCurrent, queenNext, arrowPos);
+        //this.gamegui.updateGameState(queenCurrent, queenNext, arrowPos);
 
         if(mcts != null) {
             mcts.moveQueen(enemy, arrow);
+
+            //Update GUI
+            client.updateState(mcts.root.board, isWhite);
+
             handleLocalMove();
         }
+    }
+
+    public void reset() {
+        this.mcts = null;
+        client.updateState(new GameState(isWhite), isWhite);
     }
 
     @Override
@@ -108,9 +138,15 @@ public class AmazonPlayer extends GamePlayer {
     {
         LOGGER.log(Level.INFO, "Login Success");
 
-        //Join Room
-        List<Room> rooms = gameClient.getRoomList();
-        getGameClient().joinRoom("Oyama Lake");
+        Timer timer = new Timer();
+        TimerTask roomTask = new TimerTask(){
+            @Override
+            public void run() {
+                List<Room> roomList = gameClient.getRoomList();
+                client.sendRoomList(roomList);
+            }
+        };
+        timer.schedule(roomTask, 500, 500);
     }
 
     @Override
@@ -120,6 +156,7 @@ public class AmazonPlayer extends GamePlayer {
         {
             case GameMessage.GAME_ACTION_START:
                 LOGGER.log(Level.INFO, "Game Started");
+                //ws.broadcast("message");
                 
                 // Set our colour
                 isWhite = msgDetails.get("player-white").equals(this.userName);
@@ -129,14 +166,15 @@ public class AmazonPlayer extends GamePlayer {
                 
 
                 // Initialize game state
-                board = new GameState(isWhite);
+                GameState board = new GameState(isWhite);
                 mcts = new MonteCarloTreeSearch(new SearchNode(board));
+                mcts.ws = this.client;
                 mcts.isWhite = isWhite;
 
                 // Make first move if black
                 if(!isWhite)
                     handleLocalMove();
-                 
+                  
                 
                 break;
             case GameMessage.GAME_ACTION_MOVE:
@@ -148,7 +186,8 @@ public class AmazonPlayer extends GamePlayer {
             case GameMessage.GAME_STATE_BOARD:
                 Object temp = msgDetails.get("game-state");
                 ArrayList<Integer> arr = (ArrayList<Integer>) temp;
-                this.gamegui.setGameState(arr);
+                //client.updateState(arr, isWhite);
+                //this.gamegui.setGameState(arr);
                 break;
             default:
 
@@ -170,7 +209,8 @@ public class AmazonPlayer extends GamePlayer {
 
     @Override
     public BaseGameGUI getGameGUI() {
-        return this.gamegui;
+        //return this.gamegui;
+        return null;
     }
 
     @Override
