@@ -1,0 +1,15 @@
+{
+  "name": "okgnai-shared",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "private": true,
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/ws": "^7.4.1",
+    "ws": "^7.4.4"
+  }
+}

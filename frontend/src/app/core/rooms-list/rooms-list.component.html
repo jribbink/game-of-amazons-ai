@@ -1,0 +1,30 @@
+<div class="d-flex flex-row overflow-auto customscroll m-2 text-center">
+  <div
+    *ngFor="let room of socketService.rooms"
+    class="p-2 m-2 rounded shadow-sm"
+    [class]="socketService.currentRoom == room.name ? 'activeRoom' : ''"
+    (click)="setRoom(room.name)"
+    [style.min-width.px]="145"
+  >
+    <div class="font-weight-bold" [style.font-size.em]="1.1">
+      {{ room.name }}
+    </div>
+    <div
+      [class]="
+        room.players == 2
+          ? 'text-success'
+          : room.players == 1
+          ? 'color-pending'
+          : room.players == 0
+          ? 'text-danger'
+          : ''
+      "
+      class="font-weight-bold"
+    >
+      Players: {{ room.players }}
+    </div>
+    <div class="text-secondary font-weight-bold">
+      Spectators: {{ room.spectators }}
+    </div>
+  </div>
+</div>

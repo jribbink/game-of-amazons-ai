@@ -1,0 +1,10 @@
+<div class="logs border shadow rounded mr-auto ml-auto d-flex flex-column">
+  <h2 class="p-2 text-center">Logs</h2>
+  <textarea
+    readonly="true"
+    class="w-100 h-100"
+    #textarea
+    [scrollTop]="textarea.scrollHeight"
+    >{{ getLogs() }}</textarea
+  >
+</div>

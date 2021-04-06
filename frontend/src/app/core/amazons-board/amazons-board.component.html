@@ -1,0 +1,53 @@
+<div class="ml-auto mr-auto user-select-none" [style.width.px]="500">
+  <div class="my-2 d-flex flex-row">
+    <span [style.font-size.em]="1.2">Opponent</span>
+    <span class="ml-auto" [style.font-size.em]="1.2">0:00</span>
+  </div>
+  <div class="board rounded-lg">
+    <div
+      *ngFor="let i1 of [].constructor(10); let i = index"
+      [style.height.%]="10"
+      class="d-flex flex-row"
+    >
+      <div
+        *ngFor="let i2 of [].constructor(10); let j = index"
+        [style.width.%]="10"
+        [style.background-color]="tileColor(i, j)"
+      >
+        <div
+          class="position-absolute chess-tile text-center"
+          [style.z-index]="1"
+        >
+          <img
+            src="/assets/black_queen.png"
+            width="30"
+            alt="Black Queen"
+            class="chess-queen"
+            *ngIf="blackQueen(i, j)"
+          />
+
+          <img
+            src="/assets/white_queen.png"
+            width="30"
+            alt="Black Queen"
+            class="chess-queen"
+            *ngIf="whiteQueen(i, j)"
+          />
+        </div>
+
+        <div class="positon-absolute chess-tile text-white" [style.z-index]="4">
+          <div *ngIf="j == 0" class="ml-1">
+            {{ 10 - i }}
+          </div>
+          <div *ngIf="false">
+            {{ numberToAscii(j) }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="my-2 d-flex flex-row">
+    <span [style.font-size.em]="1.2">Okgn AI</span>
+    <span class="ml-auto" [style.font-size.em]="1.2">0:00</span>
+  </div>
+</div>
