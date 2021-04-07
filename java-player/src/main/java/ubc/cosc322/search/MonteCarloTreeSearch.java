@@ -10,6 +10,7 @@ import ubc.cosc322.WebsocketClient;
 import ubc.cosc322.board.GameState;
 import ubc.cosc322.board.tiles.Arrow;
 import ubc.cosc322.board.tiles.Queen;
+import ubc.cosc322.messages.MCTSUpdate;
 
 class UCT {
     public static double uctValue(
@@ -22,11 +23,11 @@ class UCT {
     }
 
     public static SearchNode findBestNodeWithUCT(SearchNode node) {
-        int parentVisit = node.board.numVisit;
+        int parentVisit = node.board.numVisit.get();
         return Collections.max(
           node.getChildren(),
           Comparator.comparing(c -> uctValue(parentVisit, 
-            c.board.numWins, c.board.numVisit)));
+            c.board.numWins.get(), c.board.numVisit.get())));
     }
 }
 
@@ -41,8 +42,7 @@ class SimulationWorker extends Thread {
             SearchNode exploreNode = mcts.selectPromisingNode(root);
             int playoutResult = mcts.simulateRandomPlayout(exploreNode);
 
-            mcts.backPropogation(exploreNode, (playoutResult == -1));
-            mcts.playouts++;
+            mcts.backPropogation(exploreNode, (playoutResult == 1));
         }
     }
 
@@ -57,24 +57,37 @@ public class MonteCarloTreeSearch {
     public SearchNode root;
     public boolean isWhite;
     public int playouts = 0;
-    
-    //CONFIG
-    final double MAX_TIME = 2;
 
+    double MAX_TIME = 5;
     public WebsocketClient ws = null;
+
+    public ArrayList<MCTSUpdate> updates = new ArrayList<>();
+
+    //CONFIG
+    final double MAX_TIME_CONFIG = 5;
+    final double NUM_THREADS = Runtime.getRuntime().availableProcessors();
 
     public MonteCarloTreeSearch(SearchNode root) {
         this.root = root;
     }
 
+    public void performSearch(boolean isBot) {
+        if(isBot) {
+            MAX_TIME = MAX_TIME_CONFIG - 1;
+        }
+        performSearch();
+    }
+
     public void performSearch() {
+        root.setChildren();
+
         long start = System.nanoTime();
         long end = start + ((long)(MAX_TIME * TimeUnit.SECONDS.toNanos(1)));
         playouts = 0;
 
         ArrayList<SimulationWorker> workers = new ArrayList<>();
 
-        for(int i = 0; i < 12; i++)
+        for(int i = 0; i < NUM_THREADS; i++)
         {
             SimulationWorker worker = new SimulationWorker(root, end, this);
             worker.start();
@@ -92,20 +105,38 @@ public class MonteCarloTreeSearch {
     }
 
     public SearchNode findNextMove() {
-        if (root.board.checkStatus() == 0)
-        {
-            root.setChildren();
-        }
-        else
+        if (root.board.checkStatus() != 0)
         {
             return root;
         }
 
+        root.board.numVisit.set(0);
+        root.board.numWins.set(0);
         performSearch();
 
         SearchNode winnerNode = null;
         for(SearchNode child: root.children)
         {
+            Queen q = child.getQueen();
+            Arrow ar = child.getArrow();
+            for(MCTSUpdate update : updates) {
+                if(
+                    update.move.friendly == q.friendly &&
+                    update.move.col == q.col &&
+                    update.move.row == q.row &&
+                    update.move.prev_col == q.prev_col &&
+                    update.move.prev_row == q.prev_row && 
+                    update.arrow.row == ar.row &&
+                    update.arrow.col == ar.col
+                ) {
+                    child.board.updateMCTS(update.wins, update.visits);
+                    root.board.numVisit.addAndGet(update.visits);
+                    root.board.numWins.addAndGet(update.wins);
+                }
+            }
+
+            playouts += child.board.numVisit.get();
+
             if(winnerNode == null || child.board.getScore() > winnerNode.board.getScore())
                 winnerNode = child;
 
@@ -113,13 +144,15 @@ public class MonteCarloTreeSearch {
         }
         //addLearningData(root);
         
+        updates.clear();
         printStatus(winnerNode);
+
         return winnerNode;
     }
 
     private void printStatus(SearchNode node) {
 
-        double pct = (double)node.board.numWins / node.board.numVisit;
+        double pct = (double)node.board.numWins.get() / node.board.numVisit.get();
         final int total_bars = 10;
         int left_bars = (int)Math.round(pct * 10);
         String innerStr = "#".repeat(left_bars) + " ".repeat(10 - left_bars);
@@ -133,6 +166,8 @@ public class MonteCarloTreeSearch {
         if(this.ws != null) {
             ws.log("\n" + statusString + "\n" + playouts + " playouts\n");
         }
+
+        ws.updateMCTS();
     }
 
     private void addLearningData(SearchNode node) {
@@ -151,12 +186,14 @@ public class MonteCarloTreeSearch {
         return node;
     }
 
-    public void backPropogation(SearchNode nodeToExplore, boolean ourTurn) {
+    public void backPropogation(SearchNode nodeToExplore, boolean win) {
         SearchNode tempNode = nodeToExplore;
         while (tempNode != null) {
-            tempNode.board.numVisit++;
-            if (tempNode.board.ourTurn == ourTurn) {
-                tempNode.board.numWins++;
+            tempNode.board.numVisit.incrementAndGet();
+            if (win) {
+                tempNode.board.numWins.incrementAndGet();
+            } else {
+                boolean test = false;
             }
 
             tempNode = tempNode.getParent();
@@ -168,11 +205,7 @@ public class MonteCarloTreeSearch {
         GameState tempState = tempNode.board;
 
         int status = tempState.checkStatus();
-        
-        if (status == -1) {
-            tempNode.getParent().board.numWins = Integer.MIN_VALUE;
-            return status;
-        }
+
         while (status == 0) {
             tempState.randomPlay();
             status = tempState.checkStatus();

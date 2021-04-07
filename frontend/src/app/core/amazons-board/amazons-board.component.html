@@ -1,8 +1,7 @@
 <div class="ml-auto mr-auto user-select-none" [style.width.px]="500">
-  <div class="my-2 d-flex flex-row">
-    <span [style.font-size.em]="1.2">Opponent</span>
-    <span class="ml-auto" [style.font-size.em]="1.2">0:00</span>
-  </div>
+  <ng-container
+    *ngIf="!socketService.isWhite; then friend; else enemy"
+  ></ng-container>
   <div class="board rounded-lg">
     <div
       *ngFor="let i1 of [].constructor(10); let i = index"
@@ -46,8 +45,21 @@
       </div>
     </div>
   </div>
+  <ng-container
+    *ngIf="socketService.isWhite; then friend; else enemy"
+  ></ng-container>
+</div>
+
+<ng-template #friend>
   <div class="my-2 d-flex flex-row">
     <span [style.font-size.em]="1.2">Okgn AI</span>
     <span class="ml-auto" [style.font-size.em]="1.2">0:00</span>
   </div>
-</div>
+</ng-template>
+
+<ng-template #enemy>
+  <div class="my-2 d-flex flex-row">
+    <span [style.font-size.em]="1.2">Opponent</span>
+    <span class="ml-auto" [style.font-size.em]="1.2">0:00</span>
+  </div>
+</ng-template>

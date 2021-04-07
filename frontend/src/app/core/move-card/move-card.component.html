@@ -1,0 +1,9 @@
+<div
+  class="p-2 m-2 rounded bg-light"
+  *ngIf="move != undefined && move.move != undefined"
+>
+  {{ this.getMoveString() }}
+  <div class="float-right">
+    {{ this.getGainScore() }}
+  </div>
+</div>

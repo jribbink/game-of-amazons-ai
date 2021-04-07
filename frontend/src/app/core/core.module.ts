@@ -6,6 +6,7 @@ import { AnalysisComponent } from './analysis/analysis.component';
 import { RoomsListComponent } from './rooms-list/rooms-list.component';
 import { BotnetComponent } from './botnet/botnet.component';
 import { WebsocketService } from '../services/websocket.service';
+import { MoveCardComponent } from './move-card/move-card.component';
 
 @NgModule({
   declarations: [
@@ -14,6 +15,7 @@ import { WebsocketService } from '../services/websocket.service';
     AnalysisComponent,
     RoomsListComponent,
     BotnetComponent,
+    MoveCardComponent,
   ],
   exports: [
     AmazonsBoardComponent,

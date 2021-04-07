@@ -21,13 +21,17 @@ import sfs2x.client.entities.Room;
 import ubc.cosc322.board.GameState;
 import ubc.cosc322.messages.BaseMessage;
 import ubc.cosc322.messages.LoggingMessage;
+import ubc.cosc322.messages.MCTSUpdate;
+import ubc.cosc322.messages.MCTSUpdateMessage;
 import ubc.cosc322.messages.MessageParser;
 import ubc.cosc322.messages.RoleNegotiation;
+import ubc.cosc322.messages.RoleType;
 import ubc.cosc322.messages.RoomChangeMessage;
 import ubc.cosc322.messages.RoomListMessage;
 import ubc.cosc322.messages.RoomModel;
 import ubc.cosc322.messages.StateUpdate;
 import ubc.cosc322.search.MonteCarloTreeSearch;
+import ubc.cosc322.search.SearchNode;
 
 @ClientEndpoint
 public class WebsocketClient {
@@ -128,7 +132,49 @@ public class WebsocketClient {
             player.getGameClient().joinRoom(m.room);
           else
             player.getGameClient().leaveCurrentRoom();
+        } else if(message instanceof RoleNegotiation){
+          RoleNegotiation m = ((RoleNegotiation)message);
+          if(m.client_type.equals(RoleType.BOT_CLIENT))
+          {
+            player.initBotPlayer();
+          }
+          else if(m.client_type.equals(RoleType.PLAYER_CLIENT)) {
+            player.initRegularPlayer();
+          }
+        } else if (message instanceof StateUpdate) {
+          StateUpdate m = ((StateUpdate)message);
+          GameState state = m.toGameState();
+
+          if(m.ourTurn) {
+            player.mcts = new MonteCarloTreeSearch(new SearchNode(state));
+            player.mcts.ws = this;
+            player.mcts.isWhite = m.isWhite;
+
+            player.mcts.performSearch(true);
+
+            System.out.println("Conducted " + player.mcts.playouts + " playouts!");
+            updateMCTS();
+          }
+        } else if (message instanceof MCTSUpdateMessage) {
+            MCTSUpdateMessage m = (MCTSUpdateMessage)message;
+            for(MCTSUpdate update: m.updates) {
+              player.mcts.updates.add(update);
+            }
         }
+    }
+
+    public void updateMCTS() {
+      MCTSUpdate[] update = new MCTSUpdate[player.mcts.root.children.size()];
+      int index = 0;
+      for(SearchNode child: player.mcts.root.children) {
+        update[index] = new MCTSUpdate(child.getQueen(), child.getArrow(), child.board.numVisit.get(), child.board.numWins.get());
+        index++;
+      }
+
+      MCTSUpdateMessage msg = new MCTSUpdateMessage(update);
+      String updateJSON = gson.toJson(msg);
+
+      send(updateJSON);
     }
 
     public void Disconnect() throws IOException {

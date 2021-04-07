@@ -6,6 +6,7 @@ export class StateUpdate extends BaseMessage {
   message_type = MessageType.STATE_UPDATE;
   state: number[][] = [[]];
   isWhite: boolean = false;
+  ourTurn: boolean = false;
 
   constructor(data: Partial<StateUpdate>) {
     super();

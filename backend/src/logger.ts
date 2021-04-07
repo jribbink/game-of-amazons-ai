@@ -8,7 +8,7 @@ export class Logger {
     });
     this.lines.unshift(...newlines);
 
-    this.lines = this.lines.slice(0, Math.min(50, this.lines.length));
+    this.lines = this.lines.slice(0, Math.min(250, this.lines.length));
   }
 
   getLatest(): string[] {

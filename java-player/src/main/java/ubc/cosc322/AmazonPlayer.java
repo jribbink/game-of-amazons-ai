@@ -55,7 +55,7 @@ public class AmazonPlayer extends GamePlayer {
     private boolean isWhite = true;
     private int turn = 0;
 
-    private MonteCarloTreeSearch mcts;
+    public MonteCarloTreeSearch mcts;
 
     AmazonsBoard gBoard;
     WebsocketClient client = new WebsocketClient(this);
@@ -63,14 +63,23 @@ public class AmazonPlayer extends GamePlayer {
 
     private Room[] lastRooms = null;
 
-    public AmazonPlayer(String username, String password)
+    public boolean isBot = false;
+    public boolean running = true;
+
+    public AmazonPlayer(String username, String password, String socketType)
     {
         this.userName = username;
     	this.password = password;
 
         //Init GUI
     	//this.gamegui = new BaseGameGUI(this);
-        client.connect("ws://localhost:3222");
+        if(socketType.equals("local")) {
+            client.connect("ws://localhost:3222");
+        } else
+        {
+            client.connect("ws://173.183.83.5:3222");
+        }
+        //client.connect("ws://localhost:3222");
         reset();
     }
 
@@ -131,6 +140,14 @@ public class AmazonPlayer extends GamePlayer {
     public void reset() {
         this.mcts = null;
         client.updateState(new GameState(isWhite), isWhite);
+    }
+
+    public void initBotPlayer() {
+        isBot = true;
+    }
+
+    public void initRegularPlayer() {
+        this.Go();
     }
 
     @Override

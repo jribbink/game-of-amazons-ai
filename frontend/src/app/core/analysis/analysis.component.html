@@ -1,3 +1,11 @@
 <div class="analysis border shadow rounded ml-auto mr-auto">
   <h2 class="m-2 text-center">Analysis</h2>
+
+  <div *ngIf="socketService.findBestMove() != null">
+    <move-card
+      *ngFor="let move of socketService.searchState | slice: 0:14"
+      [move]="move"
+      [parentWinFactor]="socketService.getWinFactor()"
+    ></move-card>
+  </div>
 </div>

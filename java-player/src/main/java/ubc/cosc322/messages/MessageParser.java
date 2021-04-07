@@ -25,6 +25,8 @@ public class MessageParser {
             return gson.fromJson(msg, LoggingMessage.class);
           case MessageType.ROOM_CHANGE_MESSAGE:
             return gson.fromJson(msg, RoomChangeMessage.class);
+          case MessageType.MCTS_UPDATE_MESSAGE:
+            return gson.fromJson(msg, MCTSUpdateMessage.class);
           default:
             return null;
         }

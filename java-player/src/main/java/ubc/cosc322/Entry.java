@@ -6,20 +6,9 @@ import ygraph.ai.smartfox.games.amazons.HumanPlayer;
 public class Entry {
     public static void main(String[] args)
     {
-        AmazonPlayer player = new AmazonPlayer("okgntech", "W3 W1LL D0M1N&Te");
-    	
-    	if(player.getGameGUI() == null)
-        {
-    		player.Go();
-    	}
-    	else
-        {
-    		BaseGameGUI.sys_setup();
-            java.awt.EventQueue.invokeLater(new Runnable() {
-                public void run() {
-                	player.Go();
-                }
-            });
-    	}
+        String socket = "";
+        if(args.length > 0) socket = args[0];
+        AmazonPlayer player = new AmazonPlayer("okgntech2", "W3 W1LL D0M1N&Te", socket);
+        while(player.running){}
     }
 }

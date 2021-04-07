@@ -5,4 +5,5 @@ export enum MessageType {
   ROOMLIST_MESSAGE = "room-update",
   LOGGING_MESSAGE = "logging-message",
   ROOM_CHANGE_MESSAGE = "room-change",
+  MCTS_UPDATE_MESSAGE = "mcts-update",
 }

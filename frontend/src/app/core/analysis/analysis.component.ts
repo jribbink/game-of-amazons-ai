@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { WebsocketService } from 'src/app/services/websocket.service';
 
 @Component({
   selector: 'board-analysis',
@@ -6,7 +7,12 @@ import { Component, OnInit } from '@angular/core';
   styleUrls: ['./analysis.component.sass'],
 })
 export class AnalysisComponent implements OnInit {
-  constructor() {}
+  constructor(public socketService: WebsocketService) {}
+
+  getAnalString() {
+    var move = this.socketService.findBestMove();
+    return (move.wins * 100) / move.visits + '% in ' + move.visits + ' Visits';
+  }
 
   ngOnInit(): void {}
 }

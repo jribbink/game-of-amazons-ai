@@ -7,6 +7,7 @@ import { RoomMessage } from "./room-message";
 import { PlayerListMessage } from "./playerlist-message";
 import { LoggingMessage } from "./logging-message";
 import { RoomChangeMessage } from "./room-change-message";
+import { MCTSUpdateMessage } from "./mcts-update-message";
 
 export class MessageParser {
   parse(msg: WebSocket.Data): BaseMessage | undefined {
@@ -26,6 +27,8 @@ export class MessageParser {
         return new LoggingMessage(parsed);
       case MessageType.ROOM_CHANGE_MESSAGE:
         return new RoomChangeMessage(parsed);
+      case MessageType.MCTS_UPDATE_MESSAGE:
+        return new MCTSUpdateMessage(parsed);
     }
 
     return undefined;

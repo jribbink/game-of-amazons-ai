@@ -7,4 +7,5 @@ public class MessageType {
     public static final String ROOMLIST_MESSAGE = "room-update";
     public static final String LOGGING_MESSAGE = "logging-message";
     public static final String ROOM_CHANGE_MESSAGE = "room-change";
+    public static final String MCTS_UPDATE_MESSAGE = "mcts-update";
   }
