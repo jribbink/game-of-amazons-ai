@@ -3,6 +3,7 @@ package ubc.cosc322.board;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import ubc.cosc322.board.tiles.*;
 import ubc.cosc322.search.ChildGenerator;
@@ -22,8 +23,8 @@ public class GameState {
     ChildGenerator childGen = new ChildGenerator();
 
     // MONTE CARLO
-    public int numVisit = 0;
-    public int numWins = 0;
+    public AtomicInteger numVisit = new AtomicInteger(0);
+    public AtomicInteger numWins = new AtomicInteger(0);
 
     public GameState(boolean isWhite) {
         // If we start first (are black)
@@ -167,7 +168,7 @@ public class GameState {
     }
 
     public double getScore() {
-        return numVisit!=0?((double)numWins / numVisit):0;
+        return numVisit.get()!=0?((double)numWins.get() / numVisit.get()):0;
     }
 
     // Get all possible moves for queen

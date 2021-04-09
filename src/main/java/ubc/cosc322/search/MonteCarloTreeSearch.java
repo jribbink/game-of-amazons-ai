@@ -21,11 +21,11 @@ class UCT {
     }
 
     public static SearchNode findBestNodeWithUCT(SearchNode node) {
-        int parentVisit = node.board.numVisit;
+        int parentVisit = node.board.numVisit.get();
         return Collections.max(
           node.getChildren(),
           Comparator.comparing(c -> uctValue(parentVisit, 
-            c.board.numWins, c.board.numVisit)));
+            c.board.numWins.get(), c.board.numVisit.get())));
     }
 }
 
@@ -58,7 +58,7 @@ public class MonteCarloTreeSearch {
     public int playouts = 0;
     
     //CONFIG
-    final double MAX_TIME = 28;
+    final double MAX_TIME = 5;
 
     public MonteCarloTreeSearch(SearchNode root) {
         this.root = root;
@@ -112,7 +112,7 @@ public class MonteCarloTreeSearch {
 
     private void printStatus(SearchNode node) {
 
-        double pct = (double)node.board.numWins / node.board.numVisit;
+        double pct = (double)node.board.numWins.get() / node.board.numVisit.get();
         final int total_bars = 10;
         int left_bars = (int)Math.round(pct * 10);
         String innerStr = "#".repeat(left_bars) + " ".repeat(10 - left_bars);
@@ -142,9 +142,9 @@ public class MonteCarloTreeSearch {
     public void backPropogation(SearchNode nodeToExplore, boolean ourTurn) {
         SearchNode tempNode = nodeToExplore;
         while (tempNode != null) {
-            tempNode.board.numVisit++;
+            tempNode.board.numVisit.incrementAndGet();
             if (tempNode.board.ourTurn == ourTurn) {
-                tempNode.board.numWins++;
+                tempNode.board.numWins.incrementAndGet();
             }
 
             tempNode = tempNode.getParent();
@@ -157,10 +157,6 @@ public class MonteCarloTreeSearch {
 
         int status = tempState.checkStatus();
         
-        if (status == -1) {
-            tempNode.getParent().board.numWins = Integer.MIN_VALUE;
-            return status;
-        }
         while (status == 0) {
             tempState.randomPlay();
             status = tempState.checkStatus();
