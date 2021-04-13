@@ -23,6 +23,8 @@ export class WebsocketService {
   ws: WebSocket = new WebSocket('ws://192.168.1.89:3222/');
 
   state: number[][];
+  ourTurn: boolean = false;
+  lastStateUpdate: number = 0;
   isWhite: boolean = true;
 
   botnet: PlayerClient[] = [];
@@ -54,6 +56,8 @@ export class WebsocketService {
         }
         this.isWhite = data.isWhite;
         this.state = state;
+        this.ourTurn = data.ourTurn;
+        this.lastStateUpdate = new Date().getTime();
       } else if (data instanceof PlayerListMessage) {
         if (data.addingPlayers) {
           data.players.forEach((player) => {

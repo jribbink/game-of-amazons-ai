@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+
+import com.google.common.util.concurrent.AtomicDouble;
 
 import ubc.cosc322.board.tiles.*;
 import ubc.cosc322.search.ChildGenerator;
@@ -23,8 +26,8 @@ public class GameState {
     ChildGenerator childGen = new ChildGenerator();
 
     // MONTE CARLO
-    public AtomicInteger numVisit = new AtomicInteger(0);
-    public AtomicInteger numWins = new AtomicInteger(0);
+    public AtomicDouble numVisit = new AtomicDouble(0);
+    public AtomicDouble numWins = new AtomicDouble(0);
 
     public GameState(boolean isWhite) {
         // If we start first (are black)
@@ -47,7 +50,7 @@ public class GameState {
         updateMoves();
     }
 
-    public void updateMCTS(int wins, int visits)
+    public void updateMCTS(double wins, double visits)
     {
         numWins.addAndGet(wins);
         numVisit.addAndGet(visits);
@@ -140,6 +143,15 @@ public class GameState {
         SearchNode move = possibleMoves.get((int)(Math.random() * possibleMoves.size()));*/
 
         updateMoves();
+
+        /*Queen[] queens = (ourTurn)?friendlies:enemies;
+        Queen toMove = queens[(int)(Math.random() * 4)];
+        ArrayList<Queen> moves = getMoves(toMove);
+        while(moves.isEmpty()) {
+            toMove = queens[(int)(Math.random() * 4)];
+            moves = getMoves(toMove);
+        }*/
+
         Queen move = moves.get((int)(Math.random() * moves.size()));
         ArrayList<Arrow> arrows = getArrowMoves(move.row, move.col, move.prev_row, move.prev_col);
         Arrow arrow = arrows.get((int)(Math.random() * arrows.size()));
@@ -169,12 +181,12 @@ public class GameState {
         return m.isEmpty();
     }
 
-    public int checkStatus() {
-        return (isFriendlyGoal())?1:(isEnemyGoal())?-1:0;
+    public double checkStatus() {
+        return (isFriendlyGoal())?1:(isEnemyGoal())?0:0.5;
     }
 
     public double getScore() {
-        int visit = numVisit.get();
+        double visit = numVisit.get();
         return visit!=0?((double)numWins.get() / visit):0;
     }
 
@@ -288,6 +300,148 @@ public class GameState {
                 move.prev_col = q.col;
                 move.prev_row = q.row;
                 moves.add(move);
+            }
+            else
+                break;
+        }
+
+        return moves;
+    }
+
+    //Get Possible moves from quuen position including queens
+    public ArrayList<Queen> getMovesWithQueen(Queen q) {
+        ArrayList<Queen> moves = new ArrayList<Queen>();
+
+        // Get all moves left
+        for(int i = 1; q.col - i >= 0; i++)
+        {
+            if(board[q.row][q.col - i] == null || board[q.row][q.col - i] instanceof Queen) {
+                Queen move = new Queen(q.row, q.col - i);
+                move.prev_col = q.col;
+                move.prev_row = q.row;
+                moves.add(move);
+
+                if(board[q.row][q.col - i] instanceof Queen)
+                    break;
+            }
+            else
+                break;
+        }
+
+        // Get all moves right
+        for(int i = 1; q.col + i <= 9; i++)
+        {
+            if(board[q.row][q.col + i] == null || board[q.row][q.col + i] instanceof Queen)
+            {
+                Queen move = new Queen(q.row, q.col + i);
+                move.prev_col = q.col;
+                move.prev_row = q.row;
+                moves.add(move);
+
+                if(board[q.row][q.col + i] instanceof Queen)
+                    break;
+            }
+            else
+                break;
+        }
+
+        // Get all moves up
+        for(int i = 1; q.row - i > 0; i++)
+        {
+            if(board[q.row - i][q.col] == null || board[q.row - i][q.col] instanceof Queen)
+            {
+                Queen move = new Queen(q.row - i, q.col);
+                move.prev_col = q.col;
+                move.prev_row = q.row;
+                moves.add(move);
+
+                if(board[q.row - i][q.col] instanceof Queen)
+                    break;
+            }
+            else
+                break;
+        }
+
+        // Get all moves down
+        for(int i = 1; q.row + i <= 9; i++)
+        {
+            if(board[q.row + i][q.col] == null || board[q.row + i][q.col] instanceof Queen)
+            {
+                Queen move = new Queen(q.row + i, q.col);
+                move.prev_col = q.col;
+                move.prev_row = q.row;
+                moves.add(move);
+
+                if(board[q.row + i][q.col] instanceof Queen)
+                    break;
+            }
+            else
+                break;
+        }
+
+        // Get all moves diag left/up
+        for(int i = 1; q.col - i >= 0 && q.row - i >= 0; i++)
+        {
+            if(board[q.row - i][q.col - i] == null || board[q.row - i][q.col - i] instanceof Queen)
+            {
+                Queen move = new Queen(q.row - i, q.col - i);
+                move.prev_col = q.col;
+                move.prev_row = q.row;
+                moves.add(move);
+
+                if(board[q.row - i][q.col - i] instanceof Queen)
+                    break;
+            }
+            else
+                break;
+        }
+
+        // Get all moves diag left/down
+        for(int i = 1; q.col - i >= 0 && q.row + i <= 9; i++)
+        {
+            if(board[q.row + i][q.col - i] == null || board[q.row + i][q.col - i] instanceof Queen)
+            {
+                Queen move = new Queen(q.row + i, q.col - i);
+                move.prev_col = q.col;
+                move.prev_row = q.row;
+                moves.add(move);
+
+                if(board[q.row + i][q.col - i] instanceof Queen)
+                    break;
+            }
+            else
+                break;
+        }
+
+        // Get all moves diag right/down
+        for(int i = 1; q.col + i <= 9 && q.row + i <= 9; i++)
+        {
+            if(board[q.row + i][q.col + i] == null || board[q.row + i][q.col + i] instanceof Queen)
+            {
+                Queen move = new Queen(q.row + i, q.col + i);
+                move.prev_col = q.col;
+                move.prev_row = q.row;
+                moves.add(move);
+                
+                if(board[q.row + i][q.col + i] instanceof Queen)
+                    break;
+            }
+            else
+                break;
+        }
+
+        // Get all moves diag right/up
+        for(int i = 1; q.col + i <= 9 && q.row - i >= 0; i++)
+        {
+            if(board[q.row - i][q.col + i] == null || board[q.row - i][q.col + i] instanceof Queen)
+            {
+                Queen move = new Queen(q.row - i, q.col + i);
+                move.prev_col = q.col;
+                move.prev_row = q.row;
+                moves.add(move);
+
+                if(board[q.row - i][q.col + i] instanceof Queen)
+                    break;
             }
             else
                 break;

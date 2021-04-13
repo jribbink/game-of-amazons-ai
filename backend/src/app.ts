@@ -152,7 +152,9 @@ wss.on("connection", (ws) => {
       handshake(ws);
       broadcast(
         ws,
-        new PlayerListMessage({ players: [clients.get(ws) as PlayerClient] }),
+        new PlayerListMessage({
+          players: [clients.get(ws) as PlayerClient | BotClient],
+        }),
         { gui: true }
       );
     } else if (msg instanceof RoomMessage) {

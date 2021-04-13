@@ -1,4 +1,9 @@
-<div class="botnet border shadow rounded ml-auto mr-auto">
+<div class="botnet border shadow rounded ml-auto mr-auto overflow-auto">
   <h2 class="m-2 text-center">Botnet</h2>
-  {{ botnet | json }}
+
+  <ul>
+    <li *ngFor="let bot of botnet">
+      {{ (isBot(bot) ? "Bot " : "Host ") + bot.ip }}
+    </li>
+  </ul>
 </div>

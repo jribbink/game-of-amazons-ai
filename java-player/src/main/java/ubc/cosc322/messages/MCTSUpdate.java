@@ -6,10 +6,10 @@ import ubc.cosc322.board.tiles.Queen;
 public class MCTSUpdate {
     public Queen move;
     public Arrow arrow;
-    public int visits;
-    public int wins;
+    public double visits;
+    public double wins;
 
-    public MCTSUpdate(Queen move, Arrow arrow, int visits, int wins) {
+    public MCTSUpdate(Queen move, Arrow arrow, double visits, double wins) {
         this.move = move;
         this.arrow = arrow;
         this.visits = visits;

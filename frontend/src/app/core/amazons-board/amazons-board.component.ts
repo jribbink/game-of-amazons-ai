@@ -1,5 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, interval, Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { WebsocketService } from 'src/app/services/websocket.service';
 
 @Component({
@@ -11,7 +12,15 @@ export class AmazonsBoardComponent implements OnInit {
   @Input()
   state: number[][];
 
-  constructor(public socketService: WebsocketService) {}
+  friendTime: string = '0:00';
+  enemyTime: string = '0:00';
+
+  constructor(public socketService: WebsocketService) {
+    setInterval(() => {
+      this.friendTime = this.getTime(true);
+      this.enemyTime = this.getTime(false);
+    }, 1000);
+  }
 
   ngOnInit(): void {}
 
@@ -41,5 +50,26 @@ export class AmazonsBoardComponent implements OnInit {
     } else {
       return (i + j) % 2 == 0 ? 'olive' : 'lightgreen';
     }
+  }
+
+  getTime(friendly: boolean) {
+    var diff = new Date().getTime() - this.socketService.lastStateUpdate;
+    if (diff > 30000) {
+      return '0:00';
+    }
+
+    if (friendly && this.socketService.ourTurn) {
+      return this.millisToMinutesAndSeconds(30000 - diff);
+    } else if (!friendly && !this.socketService.ourTurn) {
+      return this.millisToMinutesAndSeconds(30000 - diff);
+    } else {
+      return '0:00';
+    }
+  }
+
+  millisToMinutesAndSeconds(millis) {
+    var minutes = Math.floor(millis / 60000);
+    var seconds = Math.floor((millis % 60000) / 1000);
+    return minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
   }
 }

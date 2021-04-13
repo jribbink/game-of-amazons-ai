@@ -53,13 +53,15 @@
 <ng-template #friend>
   <div class="my-2 d-flex flex-row">
     <span [style.font-size.em]="1.2">Okgn AI</span>
-    <span class="ml-auto" [style.font-size.em]="1.2">0:00</span>
+    <span class="ml-auto" [style.font-size.em]="1.2">{{
+      this.friendTime
+    }}</span>
   </div>
 </ng-template>
 
 <ng-template #enemy>
   <div class="my-2 d-flex flex-row">
     <span [style.font-size.em]="1.2">Opponent</span>
-    <span class="ml-auto" [style.font-size.em]="1.2">0:00</span>
+    <span class="ml-auto" [style.font-size.em]="1.2">{{ this.enemyTime }}</span>
   </div>
 </ng-template>

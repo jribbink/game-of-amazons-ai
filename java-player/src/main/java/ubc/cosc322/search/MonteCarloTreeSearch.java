@@ -4,26 +4,32 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+
+import javax.xml.validation.ValidatorHandler;
 
 import ubc.cosc322.WebsocketClient;
 import ubc.cosc322.board.GameState;
 import ubc.cosc322.board.tiles.Arrow;
 import ubc.cosc322.board.tiles.Queen;
 import ubc.cosc322.messages.MCTSUpdate;
+import ubc.cosc322.search.heuristics.DeadMonarchHeuristic;
+import ubc.cosc322.search.heuristics.FastTerritoryHeursitic;
+import ubc.cosc322.search.heuristics.Heuristic;
 
 class UCT {
     public static double uctValue(
-      int totalVisit, double nodeWinScore, int nodeVisit) {
+        double totalVisit, double nodeWinScore, double nodeVisit) {
         if (nodeVisit == 0) {
             return Double.MAX_VALUE;
         }
         return ((double) nodeWinScore / (double) nodeVisit) 
-          + 1.41 * Math.sqrt(Math.log(totalVisit) / (double) nodeVisit);
+          + 1 * Math.sqrt(Math.log(totalVisit) / (double) nodeVisit);
     }
 
     public static SearchNode findBestNodeWithUCT(SearchNode node) {
-        int parentVisit = node.board.numVisit.get();
+        double parentVisit = node.board.numVisit.get();
         return Collections.max(
           node.getChildren(),
           Comparator.comparing(c -> uctValue(parentVisit, 
@@ -36,13 +42,16 @@ class SimulationWorker extends Thread {
     long endTime;
     MonteCarloTreeSearch mcts;
 
+    Heuristic heuristic = new FastTerritoryHeursitic();
+    DeadMonarchHeuristic monarchHeuristic = new DeadMonarchHeuristic();
+
     public void run(){
         while(System.nanoTime() < endTime) {
 
             SearchNode exploreNode = mcts.selectPromisingNode(root);
-            int playoutResult = mcts.simulateRandomPlayout(exploreNode);
+            double playoutResult = mcts.simulateRandomPlayout(exploreNode, heuristic, monarchHeuristic);
 
-            mcts.backPropogation(exploreNode, (playoutResult == 1));
+            mcts.backPropogation(exploreNode, playoutResult);
         }
     }
 
@@ -57,14 +66,15 @@ public class MonteCarloTreeSearch {
     public SearchNode root;
     public boolean isWhite;
     public int playouts = 0;
+    private double queenHeur = 0;
 
-    double MAX_TIME = 5;
+    double MAX_TIME = 29.5;
     public WebsocketClient ws = null;
 
     public ArrayList<MCTSUpdate> updates = new ArrayList<>();
 
     //CONFIG
-    final double MAX_TIME_CONFIG = 5;
+    final double MAX_TIME_CONFIG = 29.5;
     final double NUM_THREADS = Runtime.getRuntime().availableProcessors();
 
     public MonteCarloTreeSearch(SearchNode root) {
@@ -79,6 +89,8 @@ public class MonteCarloTreeSearch {
     }
 
     public void performSearch() {
+        this.queenHeur = (new DeadMonarchHeuristic()).calc(root.board);
+
         root.setChildren();
 
         long start = System.nanoTime();
@@ -105,7 +117,7 @@ public class MonteCarloTreeSearch {
     }
 
     public SearchNode findNextMove() {
-        if (root.board.checkStatus() != 0)
+        if (root.board.checkStatus() != 0.5)
         {
             return root;
         }
@@ -130,8 +142,7 @@ public class MonteCarloTreeSearch {
                     update.arrow.col == ar.col
                 ) {
                     child.board.updateMCTS(update.wins, update.visits);
-                    root.board.numVisit.addAndGet(update.visits);
-                    root.board.numWins.addAndGet(update.wins);
+                    root.board.updateMCTS(update.wins, update.visits);
                 }
             }
 
@@ -152,10 +163,10 @@ public class MonteCarloTreeSearch {
 
     private void printStatus(SearchNode node) {
 
-        double pct = (double)node.board.numWins.get() / node.board.numVisit.get();
+        double pct = node.board.numWins.get() / node.board.numVisit.get();
         final int total_bars = 10;
         int left_bars = (int)Math.round(pct * 10);
-        String innerStr = "#".repeat(left_bars) + " ".repeat(10 - left_bars);
+        String innerStr = "#".repeat(Math.min(left_bars, 10)) + " ".repeat(Math.max(10 - left_bars, 0));
         
         String statusString = (isWhite?"WHITE\t":"BLACK\t") + Math.round(pct * 1000) / 10. + "%\t[" + innerStr + "]";
 
@@ -186,29 +197,46 @@ public class MonteCarloTreeSearch {
         return node;
     }
 
-    public void backPropogation(SearchNode nodeToExplore, boolean win) {
+    public void backPropogation(SearchNode nodeToExplore, double result) {
         SearchNode tempNode = nodeToExplore;
         while (tempNode != null) {
-            tempNode.board.numVisit.incrementAndGet();
-            if (win) {
-                tempNode.board.numWins.incrementAndGet();
-            } else {
-                boolean test = false;
-            }
+            tempNode.board.numVisit.addAndGet(1);
+            tempNode.board.numWins.addAndGet(result);
 
             tempNode = tempNode.getParent();
         }
     }
 
-    public int simulateRandomPlayout(SearchNode node) {
+    public double simulateRandomPlayout(SearchNode node, Heuristic heuristic, DeadMonarchHeuristic monarchHeuristic) {
         SearchNode tempNode = new SearchNode(ChildGenerator.cloneState(node.board));
         GameState tempState = tempNode.board;
 
-        int status = tempState.checkStatus();
+        double status = tempState.checkStatus();
+        double deathHeuristic = monarchHeuristic.calc(tempState);
+        /*if(deathHeuristic - queenHeur < 0) {
+            return 0;
+        }*/
 
-        while (status == 0) {
+        boolean isBlunder = false;
+        boolean approvedBlockade = deathHeuristic - queenHeur > 0 && !monarchHeuristic.isBlunder(tempState);
+
+        int plies = 0;
+        while (status == 0.5 && plies < 11) {
             tempState.randomPlay();
             status = tempState.checkStatus();
+            plies++;
+        }
+        if(status == 0.5) {
+            double h = heuristic.calc(tempState);
+            if(approvedBlockade) {
+                return 0.85 * h + 0.15;
+            }
+            else if(isBlunder) {
+                return 0.6 * h;
+            }
+            else {
+                return h;
+            }
         }
         return status;
     }
